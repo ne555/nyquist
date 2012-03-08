@@ -86,6 +86,7 @@ void print_log(const Vector &v){
 
 int main (int argc, char* argv[])
 {
+	std::cerr << "Circ Buffer\n";
 	srand(1);
 
 	time_t startTime, stopTime, elapsedTime;
