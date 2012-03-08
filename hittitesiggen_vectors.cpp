@@ -139,29 +139,24 @@ int main (int argc, char* argv[])
 	double	zi ;
 	double	zq ;
 
-	string	filename;
-	fstream fphex;
-	fstream	fp_rscoeff ;
-	fstream	fp_nyquist ;
-
 	intSigGen	i ;
 	intSigGen	j ;
 
-	string	parmStr;
 
 	startTime = time(NULL);		// for measuring runtime.
 
 // argument definition:
 // argv[1]: desired snr_scale
 // argv[2]: fgain
+	string	parmStr;
 	if (argc > 1)
 		parmStr = string(argv[1]);
 	else
 		parmStr = "00";
 	snr_scale = atoi(parmStr.c_str());
 	cout << "snr_scale is: " << snr_scale << endl;
-	filename = "data_output/hittite_qpsk" + parmStr + ".txt";
-	fphex.open(filename.c_str(), fstream::out);
+	string filename = "data_output/hittite_qpsk" + parmStr + ".txt";
+	ofstream fphex(filename.c_str());
 
 	if (argc > 2)
 		parmStr = string(argv[2]);
