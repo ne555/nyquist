@@ -66,7 +66,7 @@ void get_rs_coeffs (	intSigGen *p,			// Pointer to the first coefficient
 						vector<intSigGen> &res_coeffs	// Array of current 9 resampler coefficients
 						) ;
 
-const	intSigGen	NUM_SYMBOLS = 1 << 24 ;
+const	intSigGen	NUM_SYMBOLS = 1 << 12 ;
 const	intSigGen	COEFF_LEN 	= 256 * 8 ;
 
 int main (int argc, char* argv[])
