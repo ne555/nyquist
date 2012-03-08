@@ -73,9 +73,12 @@ void wci_nyq_filt_boost ( intSigGen i_symb,				// I symbol input
 		intSigGen *nyq_iout,	 		// I output from Nyquist filter
 		intSigGen *nyq_qout);			// Q output from Nyquist filter
 
-const	intSigGen	NUM_SYMBOLS = 1 << 20 ;
+const	intSigGen	NUM_SYMBOLS = 1 << 10 ;
 const	intSigGen	COEFF_LEN 	= 256 * 8 ;
 const	intSigGen	NBR_RES_COEFFS = 9;
+
+
+bool load_from_file(const string &filename, std::vector<intSigGen> &coeff);//coeff must have the correct size
 
 int main (int argc, char* argv[])
 {
@@ -167,22 +170,10 @@ int main (int argc, char* argv[])
 	fgain = 1 << atoi(parmStr.c_str());
 	cout << "fgain is: " << fgain << endl;
 
-//	New Section to open and read the Nyquist coefficients
-	filename = "coeff_nyquist_2048.dat";
-	fp_nyquist.open(filename.c_str(), fstream::in);
-	if (!fp_nyquist.good()) {
-		cout << "Error: Can't open file " << filename << endl ;
+	if( not load_from_file("coeff_nyquist_2048.dat", nyq_coeffs) )
 		return -1;
-	}
-
-	for(j = 0; j<COEFF_LEN and fp_nyquist >> temp; ++j)
-		nyq_coeffs.at(j) = (intSigGen)temp ;
-
-	if ( j == COEFF_LEN)
-		cout << "Nyquist Coeffs loaded" << endl;
-	else
-		cout << "Nyquist load failed" << endl;
-
+	//if( not load_from_file("coeff_resamp_128.dat", res_total_coeff) )
+		//return -1;
 //	New Section to open and read the resampler coefficients
 	filename = "coeff_resamp_128.dat";
 	fp_rscoeff.open(filename.c_str(), fstream::in);
@@ -445,4 +436,13 @@ void wci_nyq_filt_boost ( intSigGen i_symb,				// I symbol input
 
 	nyq_delay_i.push_front(i_symb);
 	nyq_delay_q.push_front(q_symb);
+}
+
+bool load_from_file(const string &filename, std::vector<intSigGen> &coeff){ //coeff must have the correct size
+	ifstream file(filename.c_str());
+	double aux;
+	size_t K=0;
+	for(; K<coeff.size() and file>>aux; ++K)
+		coeff[K] = aux;
+	return K==coeff.size();
 }
