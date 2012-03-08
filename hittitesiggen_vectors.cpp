@@ -65,9 +65,24 @@ void get_rs_coeffs (	intSigGen *p,			// Pointer to the first coefficient
 						intSigGen  resamp_index,	// Delay index
 						vector<intSigGen> &res_coeffs	// Array of current 9 resampler coefficients
 						) ;
+void wci_nyq_filt_boost ( intSigGen i_symb,				// I symbol input
+		intSigGen q_symb,				// Q symbol input
+		vector<intSigGen> &nyq_coeffs,
+		//intSigGen coeff_len,			// Coefficient length
+		boost::circular_buffer<intSigGen> &nyq_delay_i,		// I delay line storage
+		boost::circular_buffer<intSigGen> &nyq_delay_q,		// Q delay line storage
+		intSigGen *nyq_iout,	 		// I output from Nyquist filter
+		intSigGen *nyq_qout);			// Q output from Nyquist filter
 
-const	intSigGen	NUM_SYMBOLS = 1 << 12 ;
+const	intSigGen	NUM_SYMBOLS = 1 << 10 ;
 const	intSigGen	COEFF_LEN 	= 256 * 8 ;
+
+template<class Vector>
+void print_log(const Vector &v){
+	for(size_t K=0; K<v.size(); ++K)
+		std::cerr << v[K] << ' ';
+	std::cerr << '\n';
+}
 
 int main (int argc, char* argv[])
 {
@@ -84,14 +99,14 @@ int main (int argc, char* argv[])
 	vector<intSigGen>	res_coeffs(9, 0) ;
 //	intSigGen	rs_coeff_len ;
 
-	vector <intSigGen>	nyq_delay_i(COEFF_LEN, 0);
-	vector <intSigGen>	nyq_delay_q(COEFF_LEN, 0);
+	boost::circular_buffer <intSigGen>	nyq_delay_i(COEFF_LEN, 0);
+	boost::circular_buffer <intSigGen>	nyq_delay_q(COEFF_LEN, 0);
 
 	intSigGen	nyq_iout ;
 	intSigGen	nyq_qout ;
 
-	vector <intSigGen>	res_delay_i(16, 0);
-	vector <intSigGen>	res_delay_q(16, 0);
+	boost::circular_buffer <intSigGen>	res_delay_i(16, 0);
+	boost::circular_buffer <intSigGen>	res_delay_q(16, 0);
 
 	intSigGen	res_iout ;
 	intSigGen	res_qout ;
@@ -267,7 +282,7 @@ int main (int argc, char* argv[])
 
 		//	Nyquist filter the symbol
 
-		wci_nyq_filt (  i_symb,					// I symbol input
+		wci_nyq_filt_boost (  i_symb,					// I symbol input
 						q_symb,					// Q symbol input
 						nyq_coeffs,				// Nyquist coefficients for I and Q
 						nyq_delay_i,			// I delay line storage
@@ -315,7 +330,7 @@ int main (int argc, char* argv[])
 		zi = yi_sum_phase * (1.0 + gain_imbalance) ;
 		zq = yq_sum_phase * (1.0 - gain_imbalance) ;
 
-		wci_nyq_filt (  (intSigGen)zi,			// I symbol BB output
+		wci_nyq_filt_boost (  (intSigGen)zi,			// I symbol BB output
 						(intSigGen)zq,			// Q symbol BB output
 						res_coeffs,				// Nyquist coefficients for I and Q
 						res_delay_i,			// I delay line storage
@@ -330,6 +345,12 @@ int main (int argc, char* argv[])
 		fphex << (16*res_iout) << endl;
 		fphex << setfill ('0') << setw(8) << hex;
 		fphex << (16*res_qout) << endl;
+
+
+		print_log(res_delay_i);
+		print_log(res_delay_q);
+		print_log(nyq_delay_i);
+		print_log(nyq_delay_q);
 	}
 
 	nPwr += 1.0E-12;
@@ -451,4 +472,47 @@ void get_rs_coeffs (intSigGen *p,					// Pointer to the first coefficient
 		res_coeffs.at(i) = (intSigGen)*q ;
 		q = q + 1 ;
 	}
+}
+
+void wci_nyq_filt_boost ( intSigGen i_symb,				// I symbol input
+		intSigGen q_symb,				// Q symbol input
+		vector<intSigGen> &nyq_coeffs,	// Nyquist coefficients for I and Q
+		//intSigGen coeff_len,			// Coefficient length
+		boost::circular_buffer<intSigGen> &nyq_delay_i,		// I delay line storage
+		boost::circular_buffer<intSigGen> &nyq_delay_q,		// Q delay line storage
+		intSigGen *nyq_iout,	 		// I output from Nyquist filter
+		intSigGen *nyq_qout)			// Q output from Nyquist filter
+{
+	int32_t sumI, sumQ;
+
+	*nyq_iout = 0 ;
+	*nyq_qout = 0 ;
+	sumI = sumQ = 0;
+
+
+	int32_t 
+		*arr_i = nyq_delay_i.array_one().first,
+		*arr_q = nyq_delay_q.array_one().first;
+	size_t size = nyq_delay_i.array_one().second;
+
+	//Compute the next filter output
+	size_t K;
+	for (K=0 ; K < size ; K++ ) {
+		sumI += arr_i[K] * nyq_coeffs[K];
+		sumQ += arr_q[K] * nyq_coeffs[K];
+	}
+	arr_i = nyq_delay_i.array_two().first;
+	arr_q = nyq_delay_q.array_two().first;
+	size = nyq_delay_i.array_two().second;
+
+	for (size_t L=0; L < size; L++,K++ ) {
+		sumI += arr_i[L] * nyq_coeffs[K];
+		sumQ += arr_q[L] * nyq_coeffs[K];
+	}
+
+	*nyq_iout = sumI;
+	*nyq_qout = sumQ;
+
+	nyq_delay_i.push_front(i_symb);
+	nyq_delay_q.push_front(q_symb);
 }
