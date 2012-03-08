@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 CXX = g++
 CPPFLAGS = -Wall -Wextra -pedantic-errors -O2 
-LIBRARIES = -O2
+LIBRARIES = 
 
 objects = $(addprefix obj/,hittitesiggen_vectors.o)
 binary = $(addprefix bin/,nyquist.bin)
@@ -35,6 +35,7 @@ clean:
 	-rmdir bin obj
 
 test: $(binary)
-	time -p $(binary) >/dev/null
+	time -p $(binary) 00 12 >/dev/null
+	time -p $(binary) 00 12 boost >/dev/null
 	@#diff data_output/*
 

@@ -73,7 +73,7 @@ void wci_nyq_filt_boost ( intSigGen i_symb,				// I symbol input
 		intSigGen *nyq_iout,	 		// I output from Nyquist filter
 		intSigGen *nyq_qout);			// Q output from Nyquist filter
 
-const	intSigGen	NUM_SYMBOLS = 1 << 20 ;
+const	intSigGen	NUM_SYMBOLS = 1 << 21 ;
 const	intSigGen	COEFF_LEN 	= 256 * 8 ;
 const	intSigGen	NBR_RES_COEFFS = 9;
 
@@ -90,15 +90,19 @@ int main (int argc, char* argv[])
 	intSigGen	q_symb ;
 
 	vector<intSigGen>	nyq_coeffs(COEFF_LEN, 0) ;
-	boost::circular_buffer <intSigGen>	nyq_delay_i(COEFF_LEN, 0);
-	boost::circular_buffer <intSigGen>	nyq_delay_q(COEFF_LEN, 0);
+	boost::circular_buffer <intSigGen>	cb_nyq_delay_i(COEFF_LEN, 0);
+	boost::circular_buffer <intSigGen>	cb_nyq_delay_q(COEFF_LEN, 0);
+	vector<intSigGen>	v_nyq_delay_i(COEFF_LEN, 0);
+	vector<intSigGen>	v_nyq_delay_q(COEFF_LEN, 0);
 
 	intSigGen	nyq_iout ;
 	intSigGen	nyq_qout ;
 
 	vector<intSigGen>	res_coeffs(NBR_RES_COEFFS, 0) ;
-	boost::circular_buffer <intSigGen>	res_delay_i(NBR_RES_COEFFS, 0);
-	boost::circular_buffer <intSigGen>	res_delay_q(NBR_RES_COEFFS, 0);
+	boost::circular_buffer <intSigGen>	cb_res_delay_i(NBR_RES_COEFFS, 0);
+	boost::circular_buffer <intSigGen>	cb_res_delay_q(NBR_RES_COEFFS, 0);
+	vector<intSigGen>	v_res_delay_i(NBR_RES_COEFFS, 0);
+	vector<intSigGen>	v_res_delay_q(NBR_RES_COEFFS, 0);
 
 	intSigGen	res_iout ;
 	intSigGen	res_qout ;
@@ -139,8 +143,6 @@ int main (int argc, char* argv[])
 
     double phase_offset = 45.0;
 
-	double snr_scale = 0;
-	intSigGen fgain = 1<<12;
 
 	//	Initialize the nyquist delay lines, the EVM and SNR measurement
 	double snr = 0.0 ;
@@ -149,13 +151,20 @@ int main (int argc, char* argv[])
 // argument definition:
 // argv[1]: desired snr_scale
 // argv[2]: fgain
+// argv[3]: to boost or not to boost
+	double snr_scale = 0;
+	intSigGen fgain = 1<<12;
+	bool boost = false;
 	if(argc>1)
 		snr_scale = atoi(argv[1]);
 	if (argc > 2)
 		fgain = 1 << atoi(argv[2]);
 	cout << "snr_scale is: " << snr_scale << endl;
 	cout << "Fgain = " << fgain << endl;
+	if(argc>3 and string(argv[3])=="boost")
+		boost = true;
 
+	cout << "start of sim" << " with " << (boost?"circular-buffer":"vector") <<  endl;
 /////////////////////////
 // START OF THE MAIN LOOP
 /////////////////////////
@@ -176,13 +185,22 @@ int main (int argc, char* argv[])
 		}
 
 		//	Nyquist filter the symbol
-		wci_nyq_filt_boost (  i_symb,					// I symbol input
-						q_symb,					// Q symbol input
-						nyq_coeffs,				// Nyquist coefficients for I and Q
-						nyq_delay_i,			// I delay line storage
-						nyq_delay_q,			// Q delay line storage
-						&nyq_iout,	 			// I output from Nyquist filter
-						&nyq_qout);				// Q output from Nyquist filter
+		if(boost)
+			wci_nyq_filt_boost (  i_symb,					// I symbol input
+					q_symb,					// Q symbol input
+					nyq_coeffs,				// Nyquist coefficients for I and Q
+					cb_nyq_delay_i,			// I delay line storage
+					cb_nyq_delay_q,			// Q delay line storage
+					&nyq_iout,	 			// I output from Nyquist filter
+					&nyq_qout);				// Q output from Nyquist filter
+		else
+			wci_nyq_filt (  i_symb,					// I symbol input
+					q_symb,					// Q symbol input
+					nyq_coeffs,				// Nyquist coefficients for I and Q
+					v_nyq_delay_i,			// I delay line storage
+					v_nyq_delay_q,			// Q delay line storage
+					&nyq_iout,	 			// I output from Nyquist filter
+					&nyq_qout);				// Q output from Nyquist filter
 
 //	Add gaussian noise and measure the SNR
 		double i_symb_noise = (double)nyq_iout / (double)fgain ;
@@ -223,13 +241,23 @@ int main (int argc, char* argv[])
 		double zi = yi_sum_phase * (1.0 + gain_imbalance) ;
 		double zq = yq_sum_phase * (1.0 - gain_imbalance) ;
 
-		wci_nyq_filt_boost (  (intSigGen)zi,			// I symbol BB output
-						(intSigGen)zq,			// Q symbol BB output
-						res_coeffs,				// Nyquist coefficients for I and Q
-						res_delay_i,			// I delay line storage
-						res_delay_q,			// Q delay line storage
-						&res_iout,	 			// I output from Nyquist filter
-						&res_qout);				// Q output from Nyquist filter
+		if( boost )
+			wci_nyq_filt_boost (  (intSigGen)zi,			// I symbol BB output
+					(intSigGen)zq,			// Q symbol BB output
+					res_coeffs,				// Nyquist coefficients for I and Q
+					cb_res_delay_i,			// I delay line storage
+					cb_res_delay_q,			// Q delay line storage
+					&res_iout,	 			// I output from Nyquist filter
+					&res_qout);				// Q output from Nyquist filter
+		else
+			wci_nyq_filt (  (intSigGen)zi,			// I symbol BB output
+					(intSigGen)zq,			// Q symbol BB output
+					res_coeffs,				// Nyquist coefficients for I and Q
+					v_res_delay_i,			// I delay line storage
+					v_res_delay_q,			// Q delay line storage
+					&res_iout,	 			// I output from Nyquist filter
+					&res_qout);				// Q output from Nyquist filter
+			
 
 
 		res_iout = (intSigGen)(((double)res_iout)/(double)(2048.0)) ;
@@ -246,7 +274,7 @@ int main (int argc, char* argv[])
 	snr = 10 * log10(cPwr * 64.0 / nPwr);
 	cout << "snr is " << snr << endl;
 
-	cout << "end of sim" << endl;
+	cout << "end of sim" << " with " << (boost?"circular-buffer":"vector") <<  endl;
 	return 0 ;
 }
 ///////////////////////
