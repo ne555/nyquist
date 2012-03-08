@@ -73,7 +73,7 @@ void wci_nyq_filt_boost ( intSigGen i_symb,				// I symbol input
 		intSigGen *nyq_iout,	 		// I output from Nyquist filter
 		intSigGen *nyq_qout);			// Q output from Nyquist filter
 
-const	intSigGen	NUM_SYMBOLS = 1 << 10 ;
+const	intSigGen	NUM_SYMBOLS = 1 << 12 ;
 const	intSigGen	COEFF_LEN 	= 256 * 8 ;
 const	intSigGen	NBR_RES_COEFFS = 9;
 
@@ -137,7 +137,7 @@ int main (int argc, char* argv[])
 	double gain_imbalance = 0.0 ;						// 0 Gain imbalance
 	double theta = 0.0 * 3.14159 / 180.0 ;				// 0 degrees offset
 
-	double phase_offset = 45.0 * 3.14159 / 180.0 ;
+    double phase_offset = 45.0;
 
 	double snr_scale = 0;
 	intSigGen fgain = 1<<12;
@@ -188,8 +188,11 @@ int main (int argc, char* argv[])
 		double i_symb_noise = (double)nyq_iout / (double)fgain ;
 		double q_symb_noise = (double)nyq_qout / (double)fgain ;
 
-		double isymb_temp = i_symb_noise * cos(phase_offset) - q_symb_noise * sin(phase_offset) ;
-		double qsymb_temp = i_symb_noise * sin(phase_offset) + q_symb_noise * cos(phase_offset) ;
+		phase_offset += (3.6E-2 / 256.0);
+		double rad = phase_offset * 3.14159 / 180.0;
+
+        double isymb_temp = i_symb_noise * cos(rad) - q_symb_noise * sin(rad) ;
+        double qsymb_temp = i_symb_noise * sin(rad) + q_symb_noise * cos(rad) ;
 
 		i_symb_noise = isymb_temp ;
 		q_symb_noise = qsymb_temp ;
@@ -292,11 +295,6 @@ void wci_nyq_filt ( intSigGen i_symb,				// I symbol input
 					intSigGen *nyq_qout) 			// Q output from Nyquist filter
 {
 	vector<intSigGen>::iterator	iter;
-	vector<intSigGen>::iterator	iterCoeffs;
-	vector<intSigGen>::iterator	iterDelayI;
-	vector<intSigGen>::iterator	iterDelayQ;
-
-//	Compute the next filter output
 	*nyq_iout = inner_product(nyq_coeffs.begin(),
 							  nyq_coeffs.end(),
 							  nyq_delay_i.begin(),
@@ -325,9 +323,9 @@ void get_rs_coeffs (intSigGen *p,					// Pointer to the first coefficient
 	intSigGen	i ;
 	intSigGen	*q ;
 
-	q = p + (intSigGen)(resamp_index * 9) ;
+	q = p + (intSigGen)(resamp_index * NBR_RES_COEFFS) ;
 
-	for( i = 0 ; i < 9 ; i++ ) {
+	for( i = 0 ; i < NBR_RES_COEFFS ; i++ ) {
 		res_coeffs.at(i) = (intSigGen)*q ;
 		q = q + 1 ;
 	}
