@@ -107,16 +107,6 @@ int main (int argc, char* argv[])
 
 	intSigGen	fgain ;
 
-	double	i_noise ;
-	double	q_noise ;
-
-	double	i_symb_noise ;
-	double	q_symb_noise ;
-
-	double	isymb_temp ;
-	double	qsymb_temp ;
-
-	double	phase_offset ;
 
 	double	snr ;
 	double	snr_scale ;
@@ -182,7 +172,7 @@ int main (int argc, char* argv[])
 	gain_imbalance = 0.0 ;						// 0 Gain imbalance
 	theta = 0.0 * 3.14159 / 180.0 ;				// 0 degrees offset
 
-	phase_offset = 45.0 * 3.14159 / 180.0 ;
+	double phase_offset = 45.0 * 3.14159 / 180.0 ;
 
 	cout << "Fgain = " << fgain << endl;
 
@@ -220,17 +210,17 @@ int main (int argc, char* argv[])
 						&nyq_qout);				// Q output from Nyquist filter
 
 //	Add gaussian noise and measure the SNR
-		i_symb_noise = (double)nyq_iout / (double)fgain ;
-		q_symb_noise = (double)nyq_qout / (double)fgain ;
+		double i_symb_noise = (double)nyq_iout / (double)fgain ;
+		double q_symb_noise = (double)nyq_qout / (double)fgain ;
 
-		isymb_temp = i_symb_noise * cos(phase_offset) - q_symb_noise * sin(phase_offset) ;
-		qsymb_temp = i_symb_noise * sin(phase_offset) + q_symb_noise * cos(phase_offset) ;
+		double isymb_temp = i_symb_noise * cos(phase_offset) - q_symb_noise * sin(phase_offset) ;
+		double qsymb_temp = i_symb_noise * sin(phase_offset) + q_symb_noise * cos(phase_offset) ;
 
 		i_symb_noise = isymb_temp ;
 		q_symb_noise = qsymb_temp ;
 
-		i_noise = wci_get_gauss() ;
-		q_noise = wci_get_gauss() ;
+		double i_noise = wci_get_gauss() ;
+		double q_noise = wci_get_gauss() ;
 
 		i_symb_noise += (i_noise * snr_scale) ;
 		q_symb_noise += (q_noise * snr_scale) ;
