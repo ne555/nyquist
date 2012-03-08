@@ -74,7 +74,7 @@ void wci_nyq_filt_boost ( intSigGen i_symb,				// I symbol input
 		intSigGen *nyq_iout,	 		// I output from Nyquist filter
 		intSigGen *nyq_qout);			// Q output from Nyquist filter
 
-const	intSigGen	NUM_SYMBOLS = 1 << 10 ;
+const	intSigGen	NUM_SYMBOLS = 1 << 12 ;
 const	intSigGen	COEFF_LEN 	= 256 * 8 ;
 
 template<class Vector>
@@ -106,8 +106,8 @@ int main (int argc, char* argv[])
 	intSigGen	nyq_iout ;
 	intSigGen	nyq_qout ;
 
-	boost::circular_buffer <intSigGen>	res_delay_i(16, 0);
-	boost::circular_buffer <intSigGen>	res_delay_q(16, 0);
+	boost::circular_buffer <intSigGen>	res_delay_i(9, 0);
+	boost::circular_buffer <intSigGen>	res_delay_q(9, 0);
 
 	intSigGen	res_iout ;
 	intSigGen	res_qout ;
