@@ -74,19 +74,11 @@ void wci_nyq_filt_boost ( intSigGen i_symb,				// I symbol input
 		intSigGen *nyq_iout,	 		// I output from Nyquist filter
 		intSigGen *nyq_qout);			// Q output from Nyquist filter
 
-const	intSigGen	NUM_SYMBOLS = 1 << 12 ;
+const	intSigGen	NUM_SYMBOLS = 1 << 20 ;
 const	intSigGen	COEFF_LEN 	= 256 * 8 ;
-
-template<class Vector>
-void print_log(const Vector &v){
-	for(size_t K=0; K<v.size(); ++K)
-		std::cerr << v[K] << ' ';
-	std::cerr << '\n';
-}
 
 int main (int argc, char* argv[])
 {
-	std::cerr << "Circ Buffer\n";
 	srand(1);
 
 	time_t startTime, stopTime, elapsedTime;
@@ -261,6 +253,7 @@ int main (int argc, char* argv[])
 /////////////////////////
 // START OF THE MAIN LOOP
 /////////////////////////
+	fphex << "Boost\n";
 
 	for ( i = 0 ; i < NUM_SYMBOLS ; i++ ) {		//Number of symbols per update
 
@@ -339,7 +332,6 @@ int main (int argc, char* argv[])
 						&res_iout,	 			// I output from Nyquist filter
 						&res_qout);				// Q output from Nyquist filter
 
-		cerr << res_iout << ' ' << res_qout << '\t' << nyq_iout << ' ' << nyq_qout << '\n';
 
 		res_iout = (intSigGen)(((double)res_iout)/(double)(2048.0)) ;
 		res_qout = (intSigGen)(((double)res_qout)/(double)(2048.0)) ;
