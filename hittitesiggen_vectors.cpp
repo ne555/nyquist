@@ -66,8 +66,15 @@ void get_rs_coeffs (	intSigGen *p,			// Pointer to the first coefficient
 						vector<intSigGen> &res_coeffs	// Array of current 9 resampler coefficients
 						) ;
 
-const	intSigGen	NUM_SYMBOLS = 1 << 12 ;
+const	intSigGen	NUM_SYMBOLS = 1 << 10 ;
 const	intSigGen	COEFF_LEN 	= 256 * 8 ;
+
+template<class Vector>
+void print_log(const Vector &v){
+	for(size_t K=0; K<v.size(); ++K)
+		std::cerr << v[K] << ' ';
+	std::cerr << '\n';
+}
 
 int main (int argc, char* argv[])
 {
@@ -330,6 +337,11 @@ int main (int argc, char* argv[])
 		fphex << (16*res_iout) << endl;
 		fphex << setfill ('0') << setw(8) << hex;
 		fphex << (16*res_qout) << endl;
+
+		print_log(res_delay_i);
+		print_log(res_delay_q);
+		print_log(nyq_delay_i);
+		print_log(nyq_delay_q);
 	}
 
 	nPwr += 1.0E-12;
