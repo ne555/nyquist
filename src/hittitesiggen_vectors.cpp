@@ -53,7 +53,7 @@ typedef	int32_t	intSigGen;
 using namespace std;
 
 void	wci_get_qpsk  ( intSigGen *i_symb, intSigGen *q_symb ) ;
-void	wci_get_gauss ( double *noise) ;
+double	wci_get_gauss () ;
 void	wci_nyq_filt  ( intSigGen i_symb,
 						intSigGen q_symb,
 						vector<intSigGen> &nyq_coeffs,
@@ -138,9 +138,6 @@ int main (int argc, char* argv[])
 	double	zq ;
 
 	intSigGen	i ;
-	intSigGen	j ;
-
-
 	startTime = time(NULL);		// for measuring runtime.
 
 // argument definition:
@@ -232,8 +229,8 @@ int main (int argc, char* argv[])
 		i_symb_noise = isymb_temp ;
 		q_symb_noise = qsymb_temp ;
 
-		wci_get_gauss ( &i_noise ) ;
-		wci_get_gauss ( &q_noise ) ;
+		i_noise = wci_get_gauss() ;
+		q_noise = wci_get_gauss() ;
 
 		i_symb_noise += (i_noise * snr_scale) ;
 		q_symb_noise += (q_noise * snr_scale) ;
@@ -309,7 +306,7 @@ void wci_get_qpsk ( intSigGen *i_symb, intSigGen *q_symb ) {
 		*q_symb = -64 ;
 }	// End of wci_get_qpsk
 
-void wci_get_gauss ( double *noise) {
+double wci_get_gauss() {
 
 	double	gauss_num ;
 	intSigGen	num_avg ;
@@ -322,8 +319,7 @@ void wci_get_gauss ( double *noise) {
 		gauss_num += ((double)rand()/(double)RAND_MAX - 0.5);
 	}
 
-	*noise = gauss_num * sqrt((double)12/(double)num_avg) ;
-
+	return gauss_num * sqrt((double)12/(double)num_avg) ;
 }	// End of wci_get_gauss
 
 void wci_nyq_filt ( intSigGen i_symb,				// I symbol input
