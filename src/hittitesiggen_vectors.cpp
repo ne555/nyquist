@@ -105,74 +105,64 @@ int main (int argc, char* argv[])
 	intSigGen	res_qout ;
 	intSigGen	resamp_index ;
 
-	intSigGen	fgain ;
 
-
-	double	snr ;
-	double	snr_scale ;
-	double	cPwr = 0.0, nPwr = 0.0;
-
-	double	i_dc_offset ;
-	double	q_dc_offset ;
-	double	theta ;
-	double	gain_imbalance ;
-
-	intSigGen	i ;
 	startTime = time(NULL);		// for measuring runtime.
 
 // argument definition:
-// argv[1]: desired snr_scale
-// argv[2]: fgain
+// argv[1]: desired snr_scale (and it's used in the output filename)
 	string	parmStr;
 	if (argc > 1)
 		parmStr = string(argv[1]);
 	else
 		parmStr = "00";
-	snr_scale = atoi(parmStr.c_str());
-	cout << "snr_scale is: " << snr_scale << endl;
+
 	string filename = "data_output/hittite_qpsk" + parmStr + ".txt";
 	ofstream fphex(filename.c_str());
 
-	if (argc > 2)
-		parmStr = string(argv[2]);
-	else
-		parmStr = "12";
-	fgain = 1 << atoi(parmStr.c_str());
-	cout << "fgain is: " << fgain << endl;
 
 	if( not load_from_file("coeff_nyquist_2048.dat", nyq_coeffs) )
 		return -1;
 	if( not load_from_file("coeff_resamp_128.dat", res_total_coeff) )
 		return -1;
 
+//	The coefficients for all 128 banks (9 coeffs per bank) are stored
+//	in the array, res_total_coeff[1152]
 	resamp_index = 8 ;
 	get_rs_coeffs (	&res_total_coeff[0],	// Pointer to the first coefficient
 					resamp_index,			// Delay index
 					res_coeffs			// Array of current 9 resampler coefficients
 					) ;
 
-//	End of new section to read and store the resampler coefficients
-//	The coefficients for all 128 banks (9 coeffs per bank) are stored
-//	in the array, res_total_coeff[1152]
-
 	//	Initialize the DC offsets, gain imbalance and phase imbalance settings
-	i_dc_offset = 0.0 ;							// 0 I DC offset
-	q_dc_offset = 0.0 ;							// 0 I DC offset
+	double i_dc_offset = 0.0 ;							// 0 I DC offset
+	double q_dc_offset = 0.0 ;							// 0 I DC offset
 
-	gain_imbalance = 0.0 ;						// 0 Gain imbalance
-	theta = 0.0 * 3.14159 / 180.0 ;				// 0 degrees offset
+	double gain_imbalance = 0.0 ;						// 0 Gain imbalance
+	double theta = 0.0 * 3.14159 / 180.0 ;				// 0 degrees offset
 
 	double phase_offset = 45.0 * 3.14159 / 180.0 ;
 
-	cout << "Fgain = " << fgain << endl;
+	double snr_scale = 0;
+	intSigGen fgain = 1<<12;
 
 	//	Initialize the nyquist delay lines, the EVM and SNR measurement
-	snr = 0.0 ;
+	double snr = 0.0 ;
+	double cPwr = 0.0, nPwr = 0.0;
+
+// argument definition:
+// argv[1]: desired snr_scale
+// argv[2]: fgain
+	if(argc>1)
+		snr_scale = atoi(argv[1]);
+	if (argc > 2)
+		fgain = 1 << atoi(argv[2]);
+	cout << "snr_scale is: " << snr_scale << endl;
+	cout << "Fgain = " << fgain << endl;
 
 /////////////////////////
 // START OF THE MAIN LOOP
 /////////////////////////
-	for ( i = 0 ; i < NUM_SYMBOLS ; i++ ) {		//Number of symbols per update
+	for (intSigGen i = 0 ; i < NUM_SYMBOLS ; i++ ) {		//Number of symbols per update
 		//	progress indicator.
 		if (i % 100000 == 0)
 			cout << "program " << i << "/" << NUM_SYMBOLS << " completed." << endl;
@@ -397,3 +387,4 @@ bool load_from_file(const string &filename, std::vector<intSigGen> &coeff){ //co
 		coeff[K] = aux;
 	return K==coeff.size();
 }
+
