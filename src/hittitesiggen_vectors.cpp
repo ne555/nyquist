@@ -84,7 +84,6 @@ int main (int argc, char* argv[])
 {
 	srand(1);
 
-	time_t startTime, stopTime, elapsedTime;
 	std::vector<intSigGen>	res_total_coeff(1152) ;
 
 	intSigGen	i_symb ;
@@ -105,8 +104,6 @@ int main (int argc, char* argv[])
 	intSigGen	res_qout ;
 	intSigGen	resamp_index ;
 
-
-	startTime = time(NULL);		// for measuring runtime.
 
 // argument definition:
 // argv[1]: desired snr_scale (and it's used in the output filename)
@@ -247,10 +244,6 @@ int main (int argc, char* argv[])
 	cout << "snr is " << snr << endl;
 
 	cout << "end of sim" << endl;
-	stopTime = time(NULL);
-	elapsedTime = stopTime - startTime;
-	cout << "runtime: " << elapsedTime << endl;
-
 	return 0 ;
 }
 ///////////////////////
