@@ -71,6 +71,8 @@ const	intSigGen	COEFF_LEN 	= 256 * 8 ;
 
 int main (int argc, char* argv[])
 {
+	srand(1);
+
 	time_t startTime, stopTime, elapsedTime;
 	intSigGen	res_total_coeff[1152] ;
 
