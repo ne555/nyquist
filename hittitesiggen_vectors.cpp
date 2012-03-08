@@ -68,7 +68,6 @@ void get_rs_coeffs (	intSigGen *p,			// Pointer to the first coefficient
 void wci_nyq_filt_boost ( intSigGen i_symb,				// I symbol input
 		intSigGen q_symb,				// Q symbol input
 		vector<intSigGen> &nyq_coeffs,
-		//intSigGen coeff_len,			// Coefficient length
 		boost::circular_buffer<intSigGen> &nyq_delay_i,		// I delay line storage
 		boost::circular_buffer<intSigGen> &nyq_delay_q,		// Q delay line storage
 		intSigGen *nyq_iout,	 		// I output from Nyquist filter
@@ -76,6 +75,7 @@ void wci_nyq_filt_boost ( intSigGen i_symb,				// I symbol input
 
 const	intSigGen	NUM_SYMBOLS = 1 << 20 ;
 const	intSigGen	COEFF_LEN 	= 256 * 8 ;
+const	intSigGen	NBR_RES_COEFFS = 9;
 
 int main (int argc, char* argv[])
 {
@@ -88,22 +88,18 @@ int main (int argc, char* argv[])
 	intSigGen	q_symb ;
 
 	vector<intSigGen>	nyq_coeffs(COEFF_LEN, 0) ;
-
-	vector<intSigGen>	res_coeffs(9, 0) ;
-//	intSigGen	rs_coeff_len ;
-
 	boost::circular_buffer <intSigGen>	nyq_delay_i(COEFF_LEN, 0);
 	boost::circular_buffer <intSigGen>	nyq_delay_q(COEFF_LEN, 0);
 
 	intSigGen	nyq_iout ;
 	intSigGen	nyq_qout ;
 
-	boost::circular_buffer <intSigGen>	res_delay_i(9, 0);
-	boost::circular_buffer <intSigGen>	res_delay_q(9, 0);
+	vector<intSigGen>	res_coeffs(NBR_RES_COEFFS, 0) ;
+	boost::circular_buffer <intSigGen>	res_delay_i(NBR_RES_COEFFS, 0);
+	boost::circular_buffer <intSigGen>	res_delay_q(NBR_RES_COEFFS, 0);
 
 	intSigGen	res_iout ;
 	intSigGen	res_qout ;
-
 	intSigGen	resamp_index ;
 
 	intSigGen	fgain ;
@@ -121,8 +117,6 @@ int main (int argc, char* argv[])
 
 	double	phase_offset ;
 
-//	double	evm_coeff ;
-//	double	evm ;
 	double	snr ;
 	double	snr_scale ;
 	double	cPwr = 0.0, nPwr = 0.0;
@@ -157,7 +151,6 @@ int main (int argc, char* argv[])
 // argument definition:
 // argv[1]: desired snr_scale
 // argv[2]: fgain
-
 	if (argc > 1)
 		parmStr = string(argv[1]);
 	else
@@ -175,7 +168,6 @@ int main (int argc, char* argv[])
 	cout << "fgain is: " << fgain << endl;
 
 //	New Section to open and read the Nyquist coefficients
-
 	filename = "coeff_nyquist_2048.dat";
 	fp_nyquist.open(filename.c_str(), fstream::in);
 	if (!fp_nyquist.good()) {
@@ -192,7 +184,6 @@ int main (int argc, char* argv[])
 		cout << "Nyquist load failed" << endl;
 
 //	New Section to open and read the resampler coefficients
-
 	filename = "coeff_resamp_128.dat";
 	fp_rscoeff.open(filename.c_str(), fstream::in);
 	if (!fp_rscoeff.good()) {
@@ -220,7 +211,6 @@ int main (int argc, char* argv[])
 //	in the array, res_total_coeff[1152]
 
 	//	Initialize the DC offsets, gain imbalance and phase imbalance settings
-
 	i_dc_offset = 0.0 ;							// 0 I DC offset
 	q_dc_offset = 0.0 ;							// 0 I DC offset
 
@@ -229,25 +219,9 @@ int main (int argc, char* argv[])
 
 	phase_offset = 45.0 * 3.14159 / 180.0 ;
 
-	//	Initial the number of taps and the Nyquist coefficients
-	//	for a 2 samples/symbol, 20% excess BW, No DAC compensation
-
-//	rs_coeff_len = 9 ;
-
-//	Compute the filter gain to normalize the Nyquist filter outputs
-
-//	fgain = 0 ;
-//	for (i = 0 ; i < COEFF_LEN ; i++ )
-//		fgain += nyq_coeffs[i] ;
-
-//		fgain = 1 << 12 ;  // ???
-
 	cout << "Fgain = " << fgain << endl;
 
 	//	Initialize the nyquist delay lines, the EVM and SNR measurement
-
-//	evm_coeff = 1.0/128.0 ;
-//	evm = 0.0 ;
 	snr = 0.0 ;
 
 /////////////////////////
@@ -256,14 +230,11 @@ int main (int argc, char* argv[])
 	fphex << "Boost\n";
 
 	for ( i = 0 ; i < NUM_SYMBOLS ; i++ ) {		//Number of symbols per update
-
 		//	progress indicator.
-
 		if (i % 100000 == 0)
 			cout << "program " << i << "/" << NUM_SYMBOLS << " completed." << endl;
 
 		//	Randomly generate 1 of 4 possible QPSK symbols ;
-
 		if ( i % 256 == 0 ) {
 			wci_get_qpsk (	&i_symb,				// Next symbol's I value
 							&q_symb ) ;				// Next symbol's Q value
@@ -275,7 +246,6 @@ int main (int argc, char* argv[])
 		}
 
 		//	Nyquist filter the symbol
-
 		wci_nyq_filt_boost (  i_symb,					// I symbol input
 						q_symb,					// Q symbol input
 						nyq_coeffs,				// Nyquist coefficients for I and Q
@@ -285,7 +255,6 @@ int main (int argc, char* argv[])
 						&nyq_qout);				// Q output from Nyquist filter
 
 //	Add gaussian noise and measure the SNR
-
 		i_symb_noise = (double)nyq_iout / (double)fgain ;
 		q_symb_noise = (double)nyq_qout / (double)fgain ;
 
@@ -305,12 +274,10 @@ int main (int argc, char* argv[])
 				(q_noise * snr_scale) * (q_noise * snr_scale);
 
 		//	Add the DC Offsets to simulate Mixer
-
 		i_symb_noise = i_symb_noise + i_dc_offset ;
 		q_symb_noise = q_symb_noise + q_dc_offset ;
 
 		//	Simulate the Phase Imbalance
-
 		yi_cos_theta = i_symb_noise * cos(theta) ;
 		yi_sin_theta = i_symb_noise * sin(theta) ;
 		yq_cos_theta = q_symb_noise * cos(theta) ;
@@ -320,7 +287,6 @@ int main (int argc, char* argv[])
 		yq_sum_phase = yi_sin_theta + yq_cos_theta ;
 
 		//	Simulate the Gain Imbalance
-
 		zi = yi_sum_phase * (1.0 + gain_imbalance) ;
 		zq = yq_sum_phase * (1.0 - gain_imbalance) ;
 
@@ -341,11 +307,6 @@ int main (int argc, char* argv[])
 		fphex << setfill ('0') << setw(8) << hex;
 		fphex << (16*res_qout) << endl;
 
-
-	/*	print_log(res_delay_i);
-		print_log(res_delay_q);
-		print_log(nyq_delay_i);
-		print_log(nyq_delay_q);*/
 	}
 
 	nPwr += 1.0E-12;
@@ -358,7 +319,6 @@ int main (int argc, char* argv[])
 	cout << "runtime: " << elapsedTime << endl;
 
 	return 0 ;
-
 }
 ///////////////////////
 // END OF THE MAIN LOOP
@@ -406,31 +366,12 @@ void wci_nyq_filt ( intSigGen i_symb,				// I symbol input
 					intSigGen *nyq_iout,	 		// I output from Nyquist filter
 					intSigGen *nyq_qout) 			// Q output from Nyquist filter
 {
-//	intSigGen i;
-	intSigGen sumI, sumQ;
 	vector<intSigGen>::iterator	iter;
 	vector<intSigGen>::iterator	iterCoeffs;
 	vector<intSigGen>::iterator	iterDelayI;
 	vector<intSigGen>::iterator	iterDelayQ;
 
 //	Compute the next filter output
-
-	sumI = sumQ = 0;
-
-//	for (iterCoeffs = nyq_coeffs.begin(),
-//		 iterDelayI = nyq_delay_i.begin(),
-//		 iterDelayQ = nyq_delay_q.begin();
-//				iterCoeffs != nyq_coeffs.end();
-//					++iterCoeffs,
-//					++iterDelayI,
-//					++iterDelayQ)
-//	{
-//		sumI += *iterDelayI * *iterCoeffs;
-//		sumQ += *iterDelayQ * *iterCoeffs;
-//	}
-//	*nyq_iout = sumI;
-//	*nyq_qout = sumQ;
-
 	*nyq_iout = inner_product(nyq_coeffs.begin(),
 							  nyq_coeffs.end(),
 							  nyq_delay_i.begin(),
@@ -441,7 +382,6 @@ void wci_nyq_filt ( intSigGen i_symb,				// I symbol input
 							  0);
 
 //	Shift the delay lines and put the next symbol in the delay lines
-
 	nyq_delay_i.pop_back();
 	iter = nyq_delay_i.begin();
 	nyq_delay_i.insert(iter, i_symb);
@@ -452,7 +392,6 @@ void wci_nyq_filt ( intSigGen i_symb,				// I symbol input
 }
 
 //	Routine to get the 9 coefficients for a specified delay index (0-127)
-
 void get_rs_coeffs (intSigGen *p,					// Pointer to the first coefficient
 					intSigGen  resamp_index,		// Delay index
 					vector<intSigGen> &res_coeffs	// Array of current 9 resampler coefficients
@@ -472,16 +411,12 @@ void get_rs_coeffs (intSigGen *p,					// Pointer to the first coefficient
 void wci_nyq_filt_boost ( intSigGen i_symb,				// I symbol input
 		intSigGen q_symb,				// Q symbol input
 		vector<intSigGen> &nyq_coeffs,	// Nyquist coefficients for I and Q
-		//intSigGen coeff_len,			// Coefficient length
 		boost::circular_buffer<intSigGen> &nyq_delay_i,		// I delay line storage
 		boost::circular_buffer<intSigGen> &nyq_delay_q,		// Q delay line storage
 		intSigGen *nyq_iout,	 		// I output from Nyquist filter
 		intSigGen *nyq_qout)			// Q output from Nyquist filter
 {
 	int32_t sumI, sumQ;
-
-	*nyq_iout = 0 ;
-	*nyq_qout = 0 ;
 	sumI = sumQ = 0;
 
 
