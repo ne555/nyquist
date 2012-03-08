@@ -73,7 +73,7 @@ void wci_nyq_filt_boost ( intSigGen i_symb,				// I symbol input
 		intSigGen *nyq_iout,	 		// I output from Nyquist filter
 		intSigGen *nyq_qout);			// Q output from Nyquist filter
 
-const	intSigGen	NUM_SYMBOLS = 1 << 12 ;
+const	intSigGen	NUM_SYMBOLS = 1 << 20 ;
 const	intSigGen	COEFF_LEN 	= 256 * 8 ;
 const	intSigGen	NBR_RES_COEFFS = 9;
 

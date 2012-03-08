@@ -1,3 +1,4 @@
+SHELL := /bin/bash
 CXX = g++
 CPPFLAGS = -Wall -Wextra -pedantic-errors -O2 
 LIBRARIES = -O2
@@ -34,6 +35,6 @@ clean:
 	-rmdir bin obj
 
 test: $(binary)
-	$(binary)
-	diff data_output/*
+	time -p $(binary) >/dev/null
+	@#diff data_output/*
 
