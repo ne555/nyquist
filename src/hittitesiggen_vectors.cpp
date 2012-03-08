@@ -107,8 +107,6 @@ int main (int argc, char* argv[])
 
 	intSigGen	fgain ;
 
-	double	temp ;
-
 	double	i_noise ;
 	double	q_noise ;
 
