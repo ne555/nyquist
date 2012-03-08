@@ -175,14 +175,8 @@ int main (int argc, char* argv[])
 		return -1;
 	}
 
-	j = 0 ;
-	while (fp_nyquist.good())
-	{
-		fp_nyquist >> temp;
+	for(j = 0; j<COEFF_LEN and fp_nyquist >> temp; ++j)
 		nyq_coeffs.at(j) = (intSigGen)temp ;
-		if (++j == COEFF_LEN)
-			break;
-	}
 
 	if ( j == COEFF_LEN)
 		cout << "Nyquist Coeffs loaded" << endl;
@@ -198,12 +192,9 @@ int main (int argc, char* argv[])
 		return -1;
 	}
 
-	j = 0 ;
-	while (fp_rscoeff.good())
-	{
-		fp_rscoeff >> res_total_coeff[j];
-		j++ ;
-	}
+	for(j = 0; fp_rscoeff >> res_total_coeff[j]; ++j)
+		;
+
 	if ( j == 1152)
 		cout << "RS Coeffs loaded" << endl;
 	else
