@@ -66,21 +66,12 @@ void get_rs_coeffs (	intSigGen *p,			// Pointer to the first coefficient
 						vector<intSigGen> &res_coeffs	// Array of current 9 resampler coefficients
 						) ;
 
-const	intSigGen	NUM_SYMBOLS = 1 << 10 ;
+const	intSigGen	NUM_SYMBOLS = 1 << 24 ;
+const	intSigGen	NBR_RES_COEFFS = 9;
 const	intSigGen	COEFF_LEN 	= 256 * 8 ;
-
-template<class Vector>
-void print_log(const Vector &v){
-	for(size_t K=0; K<v.size(); ++K)
-		std::cerr << v[K] << ' ';
-	std::cerr << '\n';
-}
 
 int main (int argc, char* argv[])
 {
-	std::cerr << "Vector\n";
-	srand(1);
-
 	time_t startTime, stopTime, elapsedTime;
 	intSigGen	res_total_coeff[1152] ;
 
@@ -89,7 +80,7 @@ int main (int argc, char* argv[])
 
 	vector<intSigGen>	nyq_coeffs(COEFF_LEN, 0) ;
 
-	vector<intSigGen>	res_coeffs(9, 0) ;
+	vector<intSigGen>	res_coeffs(NBR_RES_COEFFS, 0) ;
 //	intSigGen	rs_coeff_len ;
 
 	vector <intSigGen>	nyq_delay_i(COEFF_LEN, 0);
@@ -98,8 +89,8 @@ int main (int argc, char* argv[])
 	intSigGen	nyq_iout ;
 	intSigGen	nyq_qout ;
 
-	vector <intSigGen>	res_delay_i(16, 0);
-	vector <intSigGen>	res_delay_q(16, 0);
+	vector <intSigGen>	res_delay_i(NBR_RES_COEFFS, 0);
+	vector <intSigGen>	res_delay_q(NBR_RES_COEFFS, 0);
 
 	intSigGen	res_iout ;
 	intSigGen	res_qout ;
@@ -130,6 +121,7 @@ int main (int argc, char* argv[])
 	double	i_dc_offset ;
 	double	q_dc_offset ;
 	double	theta ;
+	double	rad;
 	double	gain_imbalance ;
 
 	double	yi_cos_theta ;
@@ -183,8 +175,14 @@ int main (int argc, char* argv[])
 		return -1;
 	}
 
-	for(j = 0; j<COEFF_LEN and fp_nyquist >> temp; ++j)
+	j = 0 ;
+	while (fp_nyquist.good())
+	{
+		fp_nyquist >> temp;
 		nyq_coeffs.at(j) = (intSigGen)temp ;
+		if (++j == COEFF_LEN)
+			break;
+	}
 
 	if ( j == COEFF_LEN)
 		cout << "Nyquist Coeffs loaded" << endl;
@@ -200,9 +198,12 @@ int main (int argc, char* argv[])
 		return -1;
 	}
 
-	for(j = 0; fp_rscoeff >> res_total_coeff[j]; ++j)
-		;
-
+	j = 0 ;
+	while (fp_rscoeff.good())
+	{
+		fp_rscoeff >> res_total_coeff[j];
+		j++ ;
+	}
 	if ( j == 1152)
 		cout << "RS Coeffs loaded" << endl;
 	else
@@ -227,7 +228,7 @@ int main (int argc, char* argv[])
 	gain_imbalance = 0.0 ;						// 0 Gain imbalance
 	theta = 0.0 * 3.14159 / 180.0 ;				// 0 degrees offset
 
-	phase_offset = 45.0 * 3.14159 / 180.0 ;
+    phase_offset = 45.0;
 
 	//	Initial the number of taps and the Nyquist coefficients
 	//	for a 2 samples/symbol, 20% excess BW, No DAC compensation
@@ -287,9 +288,11 @@ int main (int argc, char* argv[])
 
 		i_symb_noise = (double)nyq_iout / (double)fgain ;
 		q_symb_noise = (double)nyq_qout / (double)fgain ;
+		phase_offset += (3.6E-2 / 256.0);
+		rad = phase_offset * 3.14159 / 180.0;
 
-		isymb_temp = i_symb_noise * cos(phase_offset) - q_symb_noise * sin(phase_offset) ;
-		qsymb_temp = i_symb_noise * sin(phase_offset) + q_symb_noise * cos(phase_offset) ;
+        isymb_temp = i_symb_noise * cos(rad) - q_symb_noise * sin(rad) ;
+        qsymb_temp = i_symb_noise * sin(rad) + q_symb_noise * cos(rad) ;
 
 		i_symb_noise = isymb_temp ;
 		q_symb_noise = qsymb_temp ;
@@ -331,8 +334,6 @@ int main (int argc, char* argv[])
 						&res_iout,	 			// I output from Nyquist filter
 						&res_qout);				// Q output from Nyquist filter
 
-		cerr << res_iout << ' ' << res_qout << '\t' << nyq_iout << ' ' << nyq_qout << '\n';
-
 		res_iout = (intSigGen)(((double)res_iout)/(double)(2048.0)) ;
 		res_qout = (intSigGen)(((double)res_qout)/(double)(2048.0)) ;
 
@@ -340,11 +341,6 @@ int main (int argc, char* argv[])
 		fphex << (16*res_iout) << endl;
 		fphex << setfill ('0') << setw(8) << hex;
 		fphex << (16*res_qout) << endl;
-
-		/*print_log(res_delay_i);
-		print_log(res_delay_q);
-		print_log(nyq_delay_i);
-		print_log(nyq_delay_q);*/
 	}
 
 	nPwr += 1.0E-12;
@@ -406,15 +402,13 @@ void wci_nyq_filt ( intSigGen i_symb,				// I symbol input
 					intSigGen *nyq_qout) 			// Q output from Nyquist filter
 {
 //	intSigGen i;
-	intSigGen sumI, sumQ;
+//	intSigGen sumI, sumQ;
 	vector<intSigGen>::iterator	iter;
-	vector<intSigGen>::iterator	iterCoeffs;
-	vector<intSigGen>::iterator	iterDelayI;
-	vector<intSigGen>::iterator	iterDelayQ;
+//	vector<intSigGen>::iterator	iterCoeffs;
+//	vector<intSigGen>::iterator	iterDelayI;
+//	vector<intSigGen>::iterator	iterDelayQ;
 
-//	Compute the next filter output
-
-	sumI = sumQ = 0;
+//	sumI = sumQ = 0;
 
 //	for (iterCoeffs = nyq_coeffs.begin(),
 //		 iterDelayI = nyq_delay_i.begin(),
@@ -460,9 +454,9 @@ void get_rs_coeffs (intSigGen *p,					// Pointer to the first coefficient
 	intSigGen	i ;
 	intSigGen	*q ;
 
-	q = p + (intSigGen)(resamp_index * 9) ;
+	q = p + (intSigGen)(resamp_index * NBR_RES_COEFFS) ;
 
-	for( i = 0 ; i < 9 ; i++ ) {
+	for( i = 0 ; i < NBR_RES_COEFFS ; i++ ) {
 		res_coeffs.at(i) = (intSigGen)*q ;
 		q = q + 1 ;
 	}
