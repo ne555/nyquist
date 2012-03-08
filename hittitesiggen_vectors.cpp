@@ -78,6 +78,7 @@ void print_log(const Vector &v){
 
 int main (int argc, char* argv[])
 {
+	std::cerr << "Vector\n";
 	srand(1);
 
 	time_t startTime, stopTime, elapsedTime;
@@ -330,6 +331,8 @@ int main (int argc, char* argv[])
 						&res_iout,	 			// I output from Nyquist filter
 						&res_qout);				// Q output from Nyquist filter
 
+		cerr << res_iout << ' ' << res_qout << '\t' << nyq_iout << ' ' << nyq_qout << '\n';
+
 		res_iout = (intSigGen)(((double)res_iout)/(double)(2048.0)) ;
 		res_qout = (intSigGen)(((double)res_qout)/(double)(2048.0)) ;
 
@@ -338,10 +341,10 @@ int main (int argc, char* argv[])
 		fphex << setfill ('0') << setw(8) << hex;
 		fphex << (16*res_qout) << endl;
 
-		print_log(res_delay_i);
+		/*print_log(res_delay_i);
 		print_log(res_delay_q);
 		print_log(nyq_delay_i);
-		print_log(nyq_delay_q);
+		print_log(nyq_delay_q);*/
 	}
 
 	nPwr += 1.0E-12;
