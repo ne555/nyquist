@@ -117,16 +117,6 @@ int main (int argc, char* argv[])
 	double	theta ;
 	double	gain_imbalance ;
 
-	double	yi_cos_theta ;
-	double	yi_sin_theta ;
-	double	yq_cos_theta ;
-	double	yq_sin_theta ;
-	double	yi_sum_phase ;
-	double	yq_sum_phase ;
-
-	double	zi ;
-	double	zq ;
-
 	intSigGen	i ;
 	startTime = time(NULL);		// for measuring runtime.
 
@@ -182,8 +172,6 @@ int main (int argc, char* argv[])
 /////////////////////////
 // START OF THE MAIN LOOP
 /////////////////////////
-	fphex << "Boost\n";
-
 	for ( i = 0 ; i < NUM_SYMBOLS ; i++ ) {		//Number of symbols per update
 		//	progress indicator.
 		if (i % 100000 == 0)
@@ -233,17 +221,17 @@ int main (int argc, char* argv[])
 		q_symb_noise = q_symb_noise + q_dc_offset ;
 
 		//	Simulate the Phase Imbalance
-		yi_cos_theta = i_symb_noise * cos(theta) ;
-		yi_sin_theta = i_symb_noise * sin(theta) ;
-		yq_cos_theta = q_symb_noise * cos(theta) ;
-		yq_sin_theta = q_symb_noise * sin(theta) ;
+		double yi_cos_theta = i_symb_noise * cos(theta) ;
+		double yi_sin_theta = i_symb_noise * sin(theta) ;
+		double yq_cos_theta = q_symb_noise * cos(theta) ;
+		double yq_sin_theta = q_symb_noise * sin(theta) ;
 
-		yi_sum_phase = yi_cos_theta + yq_sin_theta ;
-		yq_sum_phase = yi_sin_theta + yq_cos_theta ;
+		double yi_sum_phase = yi_cos_theta + yq_sin_theta ;
+		double yq_sum_phase = yi_sin_theta + yq_cos_theta ;
 
 		//	Simulate the Gain Imbalance
-		zi = yi_sum_phase * (1.0 + gain_imbalance) ;
-		zq = yq_sum_phase * (1.0 - gain_imbalance) ;
+		double zi = yi_sum_phase * (1.0 + gain_imbalance) ;
+		double zq = yq_sum_phase * (1.0 - gain_imbalance) ;
 
 		wci_nyq_filt_boost (  (intSigGen)zi,			// I symbol BB output
 						(intSigGen)zq,			// Q symbol BB output
