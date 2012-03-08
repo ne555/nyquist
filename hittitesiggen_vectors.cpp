@@ -85,7 +85,7 @@ int main (int argc, char* argv[])
 	srand(1);
 
 	time_t startTime, stopTime, elapsedTime;
-	intSigGen	res_total_coeff[1152] ;
+	std::vector<intSigGen>	res_total_coeff(1152) ;
 
 	intSigGen	i_symb ;
 	intSigGen	q_symb ;
@@ -172,26 +172,10 @@ int main (int argc, char* argv[])
 
 	if( not load_from_file("coeff_nyquist_2048.dat", nyq_coeffs) )
 		return -1;
-	//if( not load_from_file("coeff_resamp_128.dat", res_total_coeff) )
-		//return -1;
-//	New Section to open and read the resampler coefficients
-	filename = "coeff_resamp_128.dat";
-	fp_rscoeff.open(filename.c_str(), fstream::in);
-	if (!fp_rscoeff.good()) {
-		cout << "Error: Can't open file " << filename << endl ;
+	if( not load_from_file("coeff_resamp_128.dat", res_total_coeff) )
 		return -1;
-	}
-
-	for(j = 0; fp_rscoeff >> res_total_coeff[j]; ++j)
-		;
-
-	if ( j == 1152)
-		cout << "RS Coeffs loaded" << endl;
-	else
-		cout << "RS Coeffs load failed" << endl ;
 
 	resamp_index = 8 ;
-
 	get_rs_coeffs (	&res_total_coeff[0],	// Pointer to the first coefficient
 					resamp_index,			// Delay index
 					res_coeffs			// Array of current 9 resampler coefficients
